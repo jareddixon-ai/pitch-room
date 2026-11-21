@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Pitch Room · AI pitch coach</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2213%22 fill=%22%23FEBC11%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%225%22 fill=%22%23003660%22/%3E%3C/svg%3E">
+<meta name="description" content="Practice your startup pitch out loud. Hugging Face voice models score how you sound, then an AI investor grills you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap">
+<style>
+:root{
+  --bg:#F3EEE5; --card:#FBF8F2; --ink:#0B2238; --ink2:#4A5D70; --ink3:#8B9096; --line:#DCD2C1; --line2:#E8E0D2;
+  --navy:#003660; --gold:#FEBC11; --gold-ink:#8F6605; --good:#3F7A3A; --ok:#A86E00; --fix:#B23A1E; --rec:#D9342B;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0A1620; --card:#0F1F2C; --ink:#EDE5D6; --ink2:#A3B3C1; --ink3:#728290; --line:#22384A; --line2:#183042;
+  --navy:#8FC0E8; --gold:#FEBC11; --gold-ink:#FEBC11; --good:#8CC47E; --ok:#F0B54A; --fix:#F08060; --rec:#FF5A4F;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "Newsreader",Georgia,serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,button,.chip,.k,.tab,label.opt,.big,.num{font-family:"Archivo","Helvetica Neue",Arial,sans-serif}
+.mono,.m{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px 80px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:22px 0 14px;border-bottom:3px solid var(--navy);margin-bottom:26px}
+.logo{font-weight:900;font-size:21px;letter-spacing:-.02em;color:var(--navy);display:flex;align-items:center;gap:9px}
+.logo i{width:12px;height:12px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 30%,transparent)}
+nav{display:flex;gap:4px;margin-left:auto}
+.tab{background:none;border:0;padding:7px 12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink3);cursor:pointer;border-radius:3px}
+.tab[aria-current="true"]{color:var(--navy);background:color-mix(in srgb,var(--gold) 22%,transparent)}
+.status{width:100%;display:flex;gap:16px;flex-wrap:wrap;font:12px "IBM Plex Mono",monospace;color:var(--ink3)}
+.status b{color:var(--ink2);font-weight:500}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink3);margin-right:6px;vertical-align:1px}
+.dot.on{background:var(--good)} .dot.wait{background:var(--ok);animation:blink 1s infinite} .dot.err{background:var(--fix)}
+@keyframes blink{50%{opacity:.3}}
+section{display:none} section.on{display:block}
+h1{font-size:34px;line-height:1.08;letter-spacing:-.03em;margin:0 0 8px;color:var(--navy);font-weight:800}
+h2{font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-ink);margin:30px 0 10px;font-weight:700}
+h3{font-size:17px;margin:0;color:var(--navy);letter-spacing:-.01em}
+.lede{color:var(--ink2);font-size:18px;margin:0 0 18px;max-width:60ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px}
+textarea,input[type=text],input[type=password],select{width:100%;font:15px/1.45 "Newsreader",Georgia,serif;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:5px;padding:10px 12px}
+textarea{min-height:92px;resize:vertical}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.grid{display:grid;gap:10px}
+.judges{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+label.opt{display:block;border:1px solid var(--line);border-radius:6px;padding:12px 14px;cursor:pointer;background:var(--card);position:relative}
+label.opt input{position:absolute;opacity:0}
+label.opt:has(input:checked){border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy);background:color-mix(in srgb,var(--gold) 10%,var(--card))}
+label.opt .t{font-weight:700;font-size:15px;color:var(--navy);display:flex;align-items:center;gap:8px}
+label.opt .d{font-family:"Newsreader",serif;font-size:14px;color:var(--ink2);margin-top:2px;line-height:1.35}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg label{padding:7px 14px;font:600 13px "Archivo",sans-serif;cursor:pointer;color:var(--ink2);border-right:1px solid var(--line)}
+.seg label:last-child{border-right:0}
+.seg input{display:none}
+.seg label:has(input:checked){background:var(--navy);color:var(--bg)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end}
+.row>div{display:flex;flex-direction:column;gap:6px}
+.k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+button.btn{font-size:15px;font-weight:700;border:0;border-radius:5px;padding:13px 22px;cursor:pointer;background:var(--navy);color:var(--bg);letter-spacing:-.005em}
+button.btn.gold{background:var(--gold);color:#1a1300}
+button.btn.ghost{background:none;color:var(--navy);border:1px solid var(--line)}
+button.btn.small{padding:8px 13px;font-size:13px}
+button.btn:disabled{opacity:.45;cursor:default}
+button.link{background:none;border:0;color:var(--gold-ink);font:600 14px "Archivo",sans-serif;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:22px}
+.note{font-size:14px;color:var(--ink2)}
+.banner{border-left:3px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--card));padding:10px 14px;border-radius:0 5px 5px 0;font-size:15px;margin:14px 0}
+.banner.err{border-color:var(--fix);background:color-mix(in srgb,var(--fix) 10%,var(--card))}
+
+/* stage: recording */
+.stage{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+.judge{display:flex;gap:12px;align-items:center}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font:800 19px "Archivo",sans-serif;color:#fff;flex:none}
+.avatar.talking{animation:talk .5s infinite alternate}
+@keyframes talk{to{box-shadow:0 0 0 6px color-mix(in srgb,var(--gold) 40%,transparent)}}
+.recbtn{width:132px;height:132px;border-radius:50%;border:0;cursor:pointer;background:var(--rec);color:#fff;font:800 15px "Archivo",sans-serif;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 8px 24px color-mix(in srgb,var(--rec) 35%,transparent);position:relative}
+.recbtn.live{animation:pulse 1.4s infinite}
+.recbtn:disabled{opacity:.4;animation:none}
+@keyframes pulse{50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--rec) 15%,transparent)}}
+.timer{font:600 46px "IBM Plex Mono",monospace;letter-spacing:-.02em;color:var(--navy);line-height:1}
+.timer small{font-size:15px;color:var(--ink3);font-weight:400}
+.meter{display:flex;gap:3px;height:34px;align-items:flex-end;margin-top:10px}
+.meter i{width:6px;background:var(--line);border-radius:2px;height:4px;transition:height .08s}
+.meter.live i{background:var(--gold)}
+.bar{height:6px;background:var(--line2);border-radius:3px;overflow:hidden;margin-top:8px}
+.bar>b{display:block;height:100%;background:var(--navy);width:0;transition:width .3s}
+
+/* steps */
+.steps{list-style:none;padding:0;margin:14px 0 0}
+.steps li{padding:7px 0;color:var(--ink3);font:500 15px "Archivo",sans-serif;display:flex;gap:10px;align-items:center}
+.steps li.doing{color:var(--navy)} .steps li.done{color:var(--good)}
+.steps li::before{content:"";width:9px;height:9px;border-radius:50%;border:2px solid currentColor;flex:none}
+.steps li.doing::before{background:var(--gold);border-color:var(--gold);animation:blink 1s infinite}
+.steps li.done::before{background:currentColor}
+.steps li span{font:12px "IBM Plex Mono",monospace;color:var(--ink3);margin-left:auto}
+
+/* scores */
+.scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.score{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.score .num{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--navy)}
+.score .num small{font-size:15px;color:var(--ink3);font-weight:600;letter-spacing:0}
+.score.main{background:var(--navy);border-color:var(--navy)}
+.score.main .num,.score.main .k{color:var(--bg)} .score.main .num small{color:color-mix(in srgb,var(--bg) 60%,transparent)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.metric{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:13px 15px;border-top:3px solid var(--line)}
+.metric.good{border-top-color:var(--good)} .metric.ok{border-top-color:var(--ok)} .metric.fix{border-top-color:var(--fix)}
+.metric .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.metric .v{font:500 13px "IBM Plex Mono",monospace;color:var(--ink2);margin:2px 0 6px}
+.metric .s{font:800 20px "Archivo",sans-serif}
+.metric.good .s{color:var(--good)} .metric.ok .s{color:var(--ok)} .metric.fix .s{color:var(--fix)}
+.metric p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.4}
+.parts{display:grid;gap:7px}
+.part{display:grid;grid-template-columns:130px 1fr 36px;gap:10px;align-items:center;font:600 13px "Archivo",sans-serif;color:var(--ink2)}
+.part .bar{margin:0;height:8px}
+.part .m{text-align:right;color:var(--ink)}
+ul.list{margin:6px 0 0;padding-left:20px} ul.list li{margin-bottom:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.two{grid-template-columns:1fr}.stage{grid-template-columns:1fr;justify-items:center;text-align:center}h1{font-size:28px}}
+.transcript{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px;font-size:16px;line-height:1.75}
+.transcript .filler{background:color-mix(in srgb,var(--fix) 18%,transparent);color:var(--fix);border-radius:3px;padding:0 3px;font-weight:500}
+.transcript .hedge{background:color-mix(in srgb,var(--ok) 20%,transparent);border-radius:3px;padding:0 3px}
+.transcript .pause{font:500 11px "IBM Plex Mono",monospace;color:var(--ink3);border:1px dashed var(--line);border-radius:3px;padding:0 4px;margin:0 3px;vertical-align:1px}
+.legend{font:12px "IBM Plex Mono",monospace;color:var(--ink3);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+
+/* Q&A */
+.qhead{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.chip{display:inline-block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:4px 9px;border-radius:3px;background:color-mix(in srgb,var(--gold) 25%,transparent);color:var(--gold-ink)}
+.chip.fu{background:color-mix(in srgb,var(--fix) 15%,transparent);color:var(--fix)}
+.dots{display:flex;gap:5px;margin-left:auto}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.done{background:var(--navy)} .dots i.now{background:var(--gold)}
+.question{font:700 26px/1.25 "Archivo",sans-serif;letter-spacing:-.02em;color:var(--navy);margin:4px 0 6px;text-wrap:balance}
+.tip{font-size:14.5px;color:var(--ink2);font-style:italic}
+.verdict{font:700 19px/1.3 "Archivo",sans-serif;color:var(--navy);margin:0 0 6px}
+.answer-score{display:flex;gap:16px;align-items:center}
+.answer-score .num{font:800 50px "Archivo",sans-serif;letter-spacing:-.04em;line-height:1;color:var(--navy)}
+.minis{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.mini{font:12px "IBM Plex Mono",monospace;border:1px solid var(--line);border-radius:3px;padding:3px 7px;color:var(--ink2)}
+.mini.fix{border-color:var(--fix);color:var(--fix)} .mini.good{border-color:var(--good);color:var(--good)}
+details{margin-top:10px} summary{cursor:pointer;font:700 13px "Archivo",sans-serif;color:var(--gold-ink)}
+details p{margin:8px 0 0}
+.yourans{font-size:15px;color:var(--ink2);border-left:2px solid var(--line);padding-left:12px;margin-top:10px}
+
+/* progress */
+.chart{width:100%;height:240px;display:block}
+.chart text{font:11px "IBM Plex Mono",monospace;fill:var(--ink3)}
+.keyrow{display:flex;gap:16px;font:12px "IBM Plex Mono",monospace;color:var(--ink2);margin-top:6px;flex-wrap:wrap}
+.keyrow i{display:inline-block;width:14px;height:3px;vertical-align:3px;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:700 11px "Archivo",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line2)} td.m{text-align:right}
+.empty{color:var(--ink3);font-style:italic}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--ink3)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><i></i>The Pitch Room</div>
+    <nav>
+      <button class="tab" data-go="home" aria-current="true">Practice</button>
+      <button class="tab" data-go="progress">Progress</button>
+      <button class="tab" data-go="settings">Settings</button>
+    </nav>
+    <div class="status">
+      <span><span class="dot wait" id="mdot"></span>Voice models: <b id="mstat">loading…</b></span>
+      <span><span class="dot" id="jdot"></span>AI judge: <b id="jstat">…</b></span>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section id="home" class="on">
+    <h1>Pitch it. Get grilled. Get better.</h1>
+    <p class="lede">Give your pitch out loud. Hugging Face voice models score how you sound (pace, pauses, filler words, vocal variety, confidence), then an AI investor fires questions at you and scores every answer.</p>
+    <div id="judgeBanner"></div>
+
+    <h2>What you’re pitching</h2>
+    <textarea id="context" aria-label="What you are pitching"></textarea>
+    <p class="note">The judge uses this plus whatever you say in your pitch.</p>
+
+    <h2>Who’s judging</h2>
+    <div class="grid judges" id="judges"></div>
+
+    <h2>Setup</h2>
+    <div class="row">
+      <div><span class="k">Pitch length</span><div class="seg" id="lenSeg"></div></div>
+      <div><span class="k">Questions</span><div class="seg" id="qSeg"></div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn gold" id="startBtn">Start my pitch →</button>
+      <button class="link" id="uploadBtn">or upload a recording</button>
+      <input type="file" id="fileIn" accept="audio/*,video/*" class="hidden">
+    </div>
+    <p class="note" style="margin-top:14px">Your audio never leaves this computer. The voice models run in your browser. Only the text of what you said goes to the AI judge.</p>
+  </section>
+
+  <!-- RECORD (pitch or answer) -->
+  <section id="record">
+    <div class="judge" style="margin-bottom:18px"><div class="avatar" id="recAvatar"></div><div><div class="k" id="recWho"></div><div id="recLine" style="font-size:18px"></div></div></div>
+    <div class="card stage">
+      <button class="recbtn" id="recBtn">Start</button>
+      <div>
+        <div class="timer" id="timer">0:00 <small id="target"></small></div>
+        <div class="bar"><b id="timebar"></b></div>
+        <div class="meter" id="meter"></div>
+        <p class="note" id="recHint" style="margin:10px 0 0">Click start, then pitch like the judge is sitting across from you.</p>
+      </div>
+    </div>
+    <div class="actions"><button class="btn ghost small" id="recCancel">Cancel</button></div>
+  </section>
+
+  <!-- WORKING -->
+  <section id="working">
+    <h1 id="workTitle">Breaking down your pitch…</h1>
+    <p class="lede" id="workLede">This runs on your computer. The first time takes longer while the voice models download (about 150 MB, then they’re saved).</p>
+    <div class="card"><ul class="steps" id="steps"></ul></div>
+  </section>
+
+  <!-- PITCH REPORT -->
+  <section id="report"></section>
+
+  <!-- Q&A -->
+  <section id="qa"></section>
+
+  <!-- FINAL -->
+  <section id="final"></section>
+
+  <!-- PROGRESS -->
+  <section id="progress"></section>
+
+  <!-- SETTINGS -->
+  <section id="settings">
+    <h1>Settings</h1>
+    <h2>AI judge (asks and scores questions)</h2>
+    <div class="grid" id="brainOpts"></div>
+    <div id="hfBox" class="card" style="margin-top:10px">
+      <div class="k">Hugging Face token</div>
+      <input type="password" id="hfToken" placeholder="hf_..." autocomplete="off">
+      <p class="note">Free: sign in at huggingface.co → Settings → Access Tokens → New token, type “Fine-grained”, and tick “Make calls to Inference Providers”. Free accounts get a small monthly credit; each session uses a fraction of a cent.</p>
+      <div class="k" style="margin-top:10px">Model</div>
+      <input type="text" id="hfModel">
+    </div>
+    <div id="clBox" class="card" style="margin-top:10px">
+      <div class="k">Anthropic API key</div>
+      <input type="password" id="clKey" placeholder="sk-ant-..." autocomplete="off">
+      <p class="note">From console.anthropic.com → API Keys. Billed per use, usually a few cents per session.</p>
+      <div class="k" style="margin-top:10px">Model</div>
+      <input type="text" id="clModel">
+    </div>
+    <div class="actions"><button class="btn small" id="testJudge">Test the judge</button><span class="note" id="testOut"></span></div>
+    <p class="note">Keys stay in this browser on this computer only.</p>
+
+    <h2>Practice</h2>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="optVoice"> Judge reads questions out loud</label>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="optAuto"> Start recording my answer as soon as the question ends</label>
+    <h2>Data</h2>
+    <div class="actions" style="margin-top:0"><button class="btn ghost small" id="exportBtn">Download my history</button><button class="btn ghost small" id="clearBtn">Clear history</button><span class="note" id="dataOut"></span></div>
+  </section>
+
+  <footer>Built by Jared Dixon. Voice analysis: <span class="m">whisper-base.en</span> (speech to text with word timing) and <span class="m">wav2vec2 speech emotion</span> from Hugging Face, running in your browser with Transformers.js. Pitch and loudness are measured directly from the audio.</footer>
+</div>
+
+<script>
+<!--DELIVERY-->
+</script>
+<script>
+<!--QUESTIONS-->
+</script>
+<script type="module">
+const TJS = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
+const ASR_MODEL = 'onnx-community/whisper-base.en_timestamped';
+const SER_MODEL = 'onnx-community/wav2vec2-base-Speech_Emotion_Recognition-ONNX';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const r1 = x => Math.round(x * 10) / 10;
+const fmtT = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const grade = s => s >= 8 ? 'good' : s >= 5.5 ? 'ok' : 'fix';
+
+// ---------------- storage ----------------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('pitchroom.' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('pitchroom.' + k, JSON.stringify(v)); } catch { } }
+};
+const DEFAULTS = {
+  context: 'My startup for the NVC competition: a tool for dental offices that checks every insurance claim before it is filed so it gets paid the first time, finds patients the lowest out-of-pocket price, and keeps both the patient and the office updated on claim status.',
+  judge: 'vc', pitchLen: 120, qCount: 8, brain: 'hf', hfToken: '', hfModel: 'meta-llama/Llama-3.3-70B-Instruct',
+  clKey: '', clModel: 'claude-sonnet-5-5', voice: true, auto: true
+};
+const S = { set: { ...DEFAULTS, ...store.get('settings', {}) }, history: store.get('history', []), session: null };
+const save = () => store.set('settings', S.set);
+
+const JUDGES = {
+  angel: { name: 'Maya', title: 'Friendly angel investor', color: '#3F7A3A', desc: 'Warm and curious. Still asks the hard ones.', voice: ['Samantha', 'Google US English', 'Female'], style: 'a warm, encouraging angel investor who still asks sharp questions and wants the founder to succeed' },
+  vc: { name: 'Grant', title: 'Tough seed VC', color: '#003660', desc: 'Skeptical, numbers first, follows up on vague answers.', voice: ['Daniel', 'Alex', 'Google UK English Male', 'Male'], style: 'a skeptical seed-stage venture capital partner who cares about market size, numbers and defensibility and does not accept vague answers' },
+  shark: { name: 'Vic', title: 'TV shark', color: '#B23A1E', desc: 'Blunt, impatient, all about sales and valuation.', voice: ['Fred', 'Alex', 'Male'], style: 'a blunt, impatient TV-show investor who cares about sales, margins, valuation and whether the founder can sell, and pushes back hard' },
+  dentist: { name: 'Dr. Lee', title: 'Skeptical dentist (your customer)', color: '#8F6605', desc: 'Practical. Cares about staff time, cost and trust.', voice: ['Karen', 'Moira', 'Samantha', 'Female'], style: 'a busy, skeptical dentist who owns a practice and would be the actual customer; cares about front-desk workload, cost, switching pain, patient trust and data privacy' }
+};
+
+// ---------------- navigation ----------------
+function show(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-current', t.dataset.go === id || (id !== 'progress' && id !== 'settings' && t.dataset.go === 'home') ? 'true' : 'false'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  if (Rec.live) return;
+  if (t.dataset.go === 'progress') renderProgress();
+  if (t.dataset.go === 'home' && S.session && S.session.stage) { show(S.session.stage); return; }
+  show(t.dataset.go);
+});
+
+// ---------------- voice models (Hugging Face, in-browser, in a background worker) ----------------
+// The engine runs inside a background worker when the browser allows it (web hosting),
+// or directly on the page when it doesn't (opening the file from your computer).
+const ENGINE_SRC = `(pipeline, post) => {
+  let asr = null, ser = null, device = 'wasm';
+  const files = {};
+  const prog = p => {
+    if (p.status === 'progress' && p.total) {
+      files[p.file + p.name] = [p.loaded, p.total];
+      const v = Object.values(files); post({ kind: 'progress', loaded: v.reduce((s, x) => s + x[0], 0), total: v.reduce((s, x) => s + x[1], 0) });
+    }
+  };
+  const cpuASR = () => pipeline('automatic-speech-recognition', '${ASR_MODEL}', { device: 'wasm', dtype: { encoder_model: 'q8', decoder_model_merged: 'q8' }, progress_callback: prog });
+  async function load() {
+    let gpu = null;
+    try { if (navigator.gpu) { const a = await navigator.gpu.requestAdapter(); if (a) gpu = { f16: a.features.has('shader-f16') }; } } catch (e) {}
+    if (gpu) {
+      try {
+        asr = await pipeline('automatic-speech-recognition', '${ASR_MODEL}', { device: 'webgpu', dtype: { encoder_model: 'fp32', decoder_model_merged: 'q4' }, progress_callback: prog });
+        await asr(new Float32Array(16000), { return_timestamps: 'word' });
+        device = 'webgpu';
+      } catch (e) { asr = null; }
+    }
+    if (!asr) asr = await cpuASR();
+    post({ kind: 'stage', text: 'speech ready, loading tone model…' });
+    try { ser = await pipeline('audio-classification', '${SER_MODEL}', { device: 'wasm', dtype: 'q8', progress_callback: prog }); } catch (e) { ser = null; }
+    return { device, tone: !!ser };
+  }
+  const opts = { return_timestamps: 'word' };
+  return async (data) => {
+    const { id, cmd } = data;
+    try {
+      let out;
+      if (cmd === 'load') out = await load();
+      else if (cmd === 'transcribe') {
+        let r, switched = false;
+        try { r = await asr(data.pcm, opts); }
+        catch (e) { if (device !== 'webgpu') throw e; asr = await cpuASR(); device = 'wasm'; switched = true; r = await asr(data.pcm, opts); }
+        out = { text: r.text, chunks: r.chunks, switched };
+      } else if (cmd === 'tone') {
+        if (!ser) out = null; else {
+          const acc = {};
+          for (const w of data.wins) { const r = await ser(w, { top_k: 6 }); r.forEach(x => acc[x.label] = (acc[x.label] || 0) + x.score / data.wins.length); }
+          out = acc;
+        }
+      }
+      post({ kind: 'result', id, out });
+    } catch (e) { post({ kind: 'result', id, error: String(e && e.message || e) }); }
+  };
+}`;
+const WORKER_SRC = `import { pipeline, env } from '${TJS}';
+env.allowLocalModels = false;
+const handle = (${ENGINE_SRC})(pipeline, m => postMessage(m));
+postMessage({ kind: 'hello' });
+onmessage = ({ data }) => handle(data);`;
+
+const M = { ready: false, err: null, pct: 0, device: 'wasm', tone: false, send: null, calls: {}, n: 0, mode: '' };
+function mStatus(text, cls) { $('mstat').textContent = text; $('mdot').className = 'dot ' + (cls || ''); }
+function onEngine(data) {
+  if (data.kind === 'progress') { M.pct = data.total ? data.loaded / data.total : 0; if (!M.ready) mStatus(`downloading (${Math.round(data.loaded / 1e6)} MB so far, first time only)`, 'wait'); }
+  else if (data.kind === 'stage') mStatus(data.text, 'wait');
+  else if (data.kind === 'result') { const c = M.calls[data.id]; delete M.calls[data.id]; if (!c) return; data.error ? c.rej(new Error(data.error)) : c.res(data.out); }
+}
+function call(cmd, data = {}) {
+  return new Promise((res, rej) => { const id = ++M.n; M.calls[id] = { res, rej }; M.send({ id, cmd, ...data }); });
+}
+function startWorker() {
+  return new Promise(res => {
+    let w;
+    try { w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' })), { type: 'module' }); }
+    catch (e) { return res(null); }
+    const t = setTimeout(() => { w.terminate(); res(null); }, 20000);
+    w.onerror = e => { e.preventDefault && e.preventDefault(); clearTimeout(t); w.terminate(); res(null); };
+    w.onmessage = ({ data }) => {
+      if (data.kind === 'hello') { clearTimeout(t); w.onerror = e => console.error('worker error', e); w.onmessage = ({ data }) => onEngine(data); res(w); }
+    };
+  });
+}
+M.loading = (async () => {
+  try {
+    const w = await startWorker();
+    if (w) { M.mode = 'worker'; M.send = d => w.postMessage(d); }
+    else {
+      M.mode = 'page';
+      const T = await import(TJS);
+      T.env.allowLocalModels = false;
+      const handle = new Function('return ' + ENGINE_SRC)()(T.pipeline, m => onEngine(m));
+      M.send = d => setTimeout(() => handle(d), 60); // let the screen update before heavy work
+    }
+    const r = await call('load');
+    M.device = r.device; M.tone = r.tone; M.ready = true;
+    mStatus(`ready (${M.device === 'webgpu' ? 'GPU' : 'CPU'})${M.tone ? '' : ', tone model off'}`, 'on');
+  } catch (e) {
+    M.err = e; console.error(e);
+    mStatus('could not load. Check your internet and reload.', 'err');
+  }
+})();
+async function transcribe(pcm, onPart) {
+  await M.loading; if (!M.ready) throw new Error('The speech model did not load. Check your internet connection and reload the page.');
+  const parts = Delivery.splitForASR(pcm, 25);
+  let text = '', chunks = [];
+  for (let k = 0; k < parts.length; k++) {
+    const [a, b] = parts[k], off = a / 16000;
+    if (onPart && parts.length > 1) onPart(k + 1, parts.length);
+    const out = await call('transcribe', { pcm: pcm.slice(a, b) });
+    if (out.switched) { M.device = 'wasm'; mStatus('ready (CPU)', 'on'); }
+    text += ' ' + (out.text || '').trim();
+    for (const c of out.chunks || []) {
+      const ts = c.timestamp || [];
+      chunks.push({ text: c.text, timestamp: [ts[0] == null ? null : ts[0] + off, ts[1] == null ? null : ts[1] + off] });
+    }
+  }
+  return { text: text.trim(), chunks };
+}
+async function toneOf(pcm, max) {
+  await M.loading; if (!M.tone) return null;
+  const wins = Delivery.toneWindows(pcm, max); if (!wins.length) return null;
+  return call('tone', { wins: wins.map(([s, e]) => pcm.slice(s, e)) });
+}
+
+// ---------------- recording ----------------
+const Rec = {
+  live: false,
+  async start(onTick) {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
+    this.ctx = new AudioContext();
+    const src = this.ctx.createMediaStreamSource(this.stream);
+    this.an = this.ctx.createAnalyser(); this.an.fftSize = 512; src.connect(this.an);
+    this.chunks = [];
+    this.mr = new MediaRecorder(this.stream);
+    this.mr.ondataavailable = e => e.data.size && this.chunks.push(e.data);
+    this.mr.start(250);
+    this.t0 = performance.now(); this.live = true;
+    const buf = new Float32Array(this.an.fftSize);
+    const loop = () => {
+      if (!this.live) return;
+      this.an.getFloatTimeDomainData(buf);
+      let e = 0; for (const v of buf) e += v * v;
+      onTick((performance.now() - this.t0) / 1000, Math.sqrt(e / buf.length));
+      this.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  },
+  stop() {
+    return new Promise(res => {
+      if (!this.mr) return res(null);
+      this.live = false; cancelAnimationFrame(this.raf);
+      this.mr.onstop = () => { this.stream.getTracks().forEach(t => t.stop()); this.ctx.close(); res(new Blob(this.chunks, { type: this.mr.mimeType })); this.mr = null; };
+      this.mr.stop();
+    });
+  }
+};
+async function toPCM(blob) {
+  const ab = await blob.arrayBuffer();
+  const ac = new AudioContext();
+  const buf = await ac.decodeAudioData(ab); ac.close();
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000);
+  const s = off.createBufferSource(); s.buffer = buf; s.connect(off.destination); s.start();
+  return (await off.startRendering()).getChannelData(0);
+}
+
+const meterBars = Array.from({ length: 36 }, () => { const i = document.createElement('i'); $('meter').appendChild(i); return i; });
+function recordScreen({ who, line, target, hint, autoStart }) {
+  return new Promise((resolve, reject) => {
+    const j = JUDGES[S.set.judge];
+    $('recAvatar').textContent = who === 'you' ? 'J' : j.name[0];
+    $('recAvatar').style.background = who === 'you' ? 'var(--gold)' : j.color;
+    $('recAvatar').style.color = who === 'you' ? '#1a1300' : '#fff';
+    $('recWho').textContent = who === 'you' ? 'Your pitch' : `${j.name} · ${j.title}`;
+    $('recLine').innerHTML = line;
+    $('target').textContent = target ? `/ ${fmtT(target)} target` : '';
+    $('recHint').textContent = hint || '';
+    $('timer').firstChild.textContent = '0:00 ';
+    $('timebar').style.width = '0';
+    const btn = $('recBtn'); btn.textContent = 'Start'; btn.classList.remove('live'); btn.disabled = false;
+    meterBars.forEach(b => b.style.height = '4px'); $('meter').classList.remove('live');
+    show('record');
+    const begin = async () => {
+      try {
+        await Rec.start((t, lvl) => {
+          $('timer').firstChild.textContent = fmtT(t) + ' ';
+          if (target) { $('timebar').style.width = Math.min(100, t / target * 100) + '%'; $('timebar').style.background = t > target * 1.15 ? 'var(--fix)' : 'var(--navy)'; }
+          const h = clamp(Math.sqrt(lvl) * 90, 3, 34);
+          meterBars.push(meterBars.shift()); const b = meterBars[meterBars.length - 1];
+          $('meter').appendChild(b); b.style.height = h + 'px';
+        });
+        $('meter').classList.add('live');
+        btn.textContent = 'Stop'; btn.classList.add('live');
+        $('recHint').textContent = 'Recording. Click stop when you are done.';
+      } catch (e) {
+        reject(new Error(e && e.name === 'NotAllowedError' ? 'Microphone access was blocked. Allow the microphone for this page (icon in the address bar), or upload a recording instead.' : 'Could not start the microphone: ' + (e.message || e)));
+      }
+    };
+    btn.onclick = async () => {
+      if (!Rec.live) return begin();
+      btn.disabled = true; btn.classList.remove('live');
+      const blob = await Rec.stop();
+      resolve(blob);
+    };
+    $('recCancel').onclick = async () => { if (Rec.live) await Rec.stop(); reject(new Error('cancel')); };
+    if (autoStart) begin();
+  });
+}
+
+// ---------------- text to speech ----------------
+function pickVoice(prefs) {
+  const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  const en = vs.filter(v => /^en(-|_)/i.test(v.lang));
+  for (const p of prefs) { const v = en.find(v => v.name.includes(p)); if (v) return v; }
+  return en[0] || null;
+}
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { };
+function speak(text) {
+  return new Promise(res => {
+    if (!S.set.voice || !window.speechSynthesis) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    const j = JUDGES[S.set.judge];
+    const v = pickVoice(j.voice); if (v) u.voice = v;
+    u.rate = S.set.judge === 'shark' ? 1.1 : 1.02;
+    let done = false; const fin = () => { if (!done) { done = true; res(); } };
+    u.onend = fin; u.onerror = fin;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    setTimeout(fin, 4000 + text.length * 90);
+  });
+}
+
+// ---------------- AI judge (Hugging Face or Claude) ----------------
+function brainOn() {
+  if (S.set.brain === 'hf') return !!S.set.hfToken.trim();
+  if (S.set.brain === 'claude') return !!S.set.clKey.trim();
+  return false;
+}
+function judgeStatus() {
+  const on = brainOn();
+  $('jdot').className = 'dot ' + (on ? 'on' : '');
+  $('jstat').textContent = on ? (S.set.brain === 'hf' ? S.set.hfModel.split('/').pop() + ' via Hugging Face' : S.set.clModel + ' via Anthropic') : 'off (built-in questions)';
+  $('judgeBanner').innerHTML = on ? '' : `<div class="banner">The AI judge is off, so you’ll get built-in questions and voice scores only. <button class="link" id="goSet">Add a free Hugging Face token</button> to get questions tailored to your pitch and scores on what you say.</div>`;
+  const g = $('goSet'); if (g) g.onclick = () => show('settings');
+}
+function parseJSON(t) {
+  t = String(t || '').replace(/```(json)?/g, '');
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('Judge did not return JSON');
+  return JSON.parse(t.slice(a, b + 1));
+}
+function friendlyErr(who, status, msg) {
+  if (status === 401 || status === 403) return who === 'Hugging Face' ? 'Hugging Face rejected the token. In Settings, paste a token that has “Make calls to Inference Providers” turned on.' : 'Anthropic rejected the API key. Check it in Settings.';
+  if (status === 402) return `${who} says you are out of credits for this month.`;
+  if (status === 429) return `${who} is rate-limiting you. Wait a minute and try again.`;
+  if (status === 404 || status === 400 && /model/i.test(msg || '')) return `${who} could not use that model. Check the model name in Settings.`;
+  return `${who} error ${status}${msg ? ': ' + String(msg).slice(0, 140) : ''}`;
+}
+async function llm(system, user, maxTokens = 900) {
+  if (S.set.brain === 'hf') {
+    const r = await fetch('https://router.huggingface.co/v1/chat/completions', {
+      method: 'POST', headers: { 'Authorization': 'Bearer ' + S.set.hfToken.trim(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: S.set.hfModel.trim(), messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: maxTokens, temperature: 0.7 })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(friendlyErr('Hugging Face', r.status, j.error && (j.error.message || j.error)));
+    const txt = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    if (!txt) throw new Error('Hugging Face sent an empty reply. Try again or pick another model in Settings.');
+    return txt;
+  }
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': S.set.clKey.trim(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: S.set.clModel.trim(), max_tokens: maxTokens, system, messages: [{ role: 'user', content: user }] })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(friendlyErr('Anthropic', r.status, j.error && j.error.message));
+  return (j.content || []).map(c => c.text || '').join('');
+}
+async function llmJSON(system, user, maxTokens) {
+  try { return parseJSON(await llm(system, user, maxTokens)); }
+  catch (e) { if (/JSON/.test(e.message) || e instanceof SyntaxError) return parseJSON(await llm(system + '\nReturn ONLY valid JSON. No other text.', user, maxTokens)); throw e; }
+}
+const persona = () => { const j = JUDGES[S.set.judge]; return `You are ${j.name}, ${j.style}. You are judging a student founder's startup pitch in a practice session.`; };
+const typeList = Object.entries(Questions.TYPES).map(([k, v]) => `${k} (${v.label})`).join(', ');
+
+async function judgePitch(transcript, d) {
+  return llmJSON(persona() + ' Score only the content of the pitch (what was said), not the delivery.',
+    `What the founder says they are pitching: ${S.set.context}\n\nTranscript of the spoken pitch (${d.speakingSeconds}s):\n"""${transcript}"""\n\nReturn JSON: {"content_score": 0-10, "parts": {"problem": 0-10, "solution": 0-10, "market": 0-10, "business_model": 0-10, "traction": 0-10, "ask": 0-10, "clarity": 0-10}, "strengths": [2 short items], "fixes": [3 short, specific items], "stronger_opening": "a punchier first sentence they could say, under 30 words", "reaction": "your one-line gut reaction, in character"}. Score 0 for parts that are missing. Be honest; a typical student pitch scores 4-7.`, 900);
+}
+async function makeQuestions(transcript, n) {
+  const out = await llmJSON(persona(),
+    `Pitch context: ${S.set.context}\n\nTranscript of their pitch:\n"""${transcript}"""\n\nWrite ${n} questions you would ask, as you would say them out loud (under 30 words each). Use ${Math.min(n, 20)} DIFFERENT types from this list: ${typeList}. Always include at least one "pushback" and one "curveball". Reference specifics from their pitch where you can, and go after weak or missing parts. Order from warm-up to hardest. Return JSON: {"questions": [{"type": "<type key>", "q": "<question>"}]}`, 1200);
+  return (out.questions || []).filter(q => q && q.q).slice(0, n).map(q => ({ type: Questions.TYPES[q.type] ? q.type : 'curveball', q: q.q }));
+}
+async function judgeAnswer(item, text, d) {
+  return llmJSON(persona(),
+    `Pitch context: ${S.set.context}\nPitch transcript (for reference): """${(S.session.pitch.text || '').slice(0, 2500)}"""\n\nYou asked (${Questions.TYPES[item.type].label}${item.followUp ? ', follow-up' : ''}): "${item.q}"\nThey answered (${d.speakingSeconds}s, ${d.wpm} words/min, ${d.fillers} filler words, ${d.startDelay}s before they started talking):\n"""${text}"""\n\nScore the CONTENT of the answer. Return JSON: {"score": 0-10, "direct": 0-10 (answered the actual question in the first sentence?), "specific": 0-10 (numbers, names, real examples), "convincing": 0-10, "verdict": "your one-line reaction, in character, under 20 words", "feedback": "1-2 sentences on exactly what to fix", "better_answer": "a strong answer they could give, first person, under 70 words, using only facts they could plausibly know"${item.followUp ? '' : ', "follow_up": "a sharp follow-up question if the answer dodged, was vague, or opened a new hole; otherwise null"'}}. Be honest; vague answers score under 5.`, 700);
+}
+async function judgeSession(sess) {
+  const qa = sess.qa.filter(x => x.answer).map(x => `[${Questions.TYPES[x.type].label}] Q: ${x.q}\nA: ${x.answer.text}\nScore: ${x.answer.score}`).join('\n\n');
+  return llmJSON(persona(),
+    `Pitch context: ${S.set.context}\nPitch score: ${sess.pitch.score}/10 (delivery ${sess.pitch.delivery.overall}, content ${sess.pitch.content ? sess.pitch.content.content_score : 'n/a'}).\n\nQ&A:\n${qa}\n\nReturn JSON: {"would_invest": "yes" | "maybe" | "no", "why": "one sentence, in character", "headline": "one-line summary of the session", "best_moment": "the single best thing they did", "top_fixes": [3 specific things to practice before the next session]}`, 600);
+}
+
+// offline content score (no AI judge): simple signals
+function quickContent(text) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const first = (text.split(/[.!?]/)[0] || '').trim();
+  const nums = (text.match(/\d|percent|thousand|million|billion|hundred/gi) || []).length;
+  const direct = first.split(/\s+/).length <= 25 && !/^(so|well|um|uh|yeah|that'?s a (great|good) question|great question)\b/i.test(first) ? 8 : 5;
+  const specific = clamp(4 + nums * 1.5, 0, 10);
+  const len = words.length < 12 ? 3 : words.length > 190 ? 5 : 8;
+  return { score: r1((direct + specific + len) / 3), direct, specific, convincing: null, verdict: '', feedback: nums ? 'You used specifics. Make sure the first sentence answers the question directly.' : 'Add a real number or example. Specifics are what make an answer believable.', better_answer: '' };
+}
+
+// ---------------- home setup ----------------
+function renderHome() {
+  $('context').value = S.set.context;
+  $('context').oninput = e => { S.set.context = e.target.value; save(); };
+  $('judges').innerHTML = Object.entries(JUDGES).map(([k, j]) => `<label class="opt"><input type="radio" name="judge" value="${k}" ${S.set.judge === k ? 'checked' : ''}><span class="t"><span class="avatar" style="width:26px;height:26px;font-size:12px;background:${j.color}">${j.name[0]}</span>${esc(j.name)}</span><span class="d"><b>${esc(j.title)}.</b> ${esc(j.desc)}</span></label>`).join('');
+  document.querySelectorAll('input[name=judge]').forEach(r => r.onchange = () => { S.set.judge = r.value; save(); });
+  const seg = (el, name, opts, key) => {
+    $(el).innerHTML = opts.map(([v, l]) => `<label><input type="radio" name="${name}" value="${v}" ${S.set[key] == v ? 'checked' : ''}>${l}</label>`).join('');
+    $(el).querySelectorAll('input').forEach(r => r.onchange = () => { S.set[key] = +r.value; save(); });
+  };
+  seg('lenSeg', 'len', [[60, '1 min'], [120, '2 min'], [180, '3 min']], 'pitchLen');
+  seg('qSeg', 'qn', [[5, '5'], [8, '8'], [12, '12']], 'qCount');
+  judgeStatus();
+}
+
+// ---------------- working steps ----------------
+function steps(list) {
+  $('steps').innerHTML = list.map((s, i) => `<li id="st${i}">${esc(s)}<span></span></li>`).join('');
+  return {
+    go(i) { list.forEach((_, k) => { const li = $('st' + k); li.className = k < i ? 'done' : k === i ? 'doing' : ''; }); this.t = performance.now(); this.i = i; },
+    done(i, note) { const li = $('st' + i); li.className = 'done'; li.querySelector('span').textContent = note || `${((performance.now() - this.t) / 1000).toFixed(1)}s`; },
+    skip(i, note) { const li = $('st' + i); li.className = ''; li.querySelector('span').textContent = note; }
+  };
+}
+
+// ---------------- the pitch ----------------
+async function startPitch(fromBlob) {
+  S.session = { id: Date.now(), date: new Date().toISOString(), judge: S.set.judge, context: S.set.context, qa: [], stage: 'record' };
+  let blob = fromBlob;
+  try {
+    if (!blob) blob = await recordScreen({ who: 'you', line: 'The floor is yours. Tell me what you’re building.', target: S.set.pitchLen, hint: 'Click start, then pitch like the judge is sitting across from you.' });
+  } catch (e) { S.session = null; if (e.message !== 'cancel') alertBox(e.message); show('home'); return; }
+  S.session.stage = 'working';
+  $('workTitle').textContent = 'Breaking down your pitch…';
+  $('workLede').textContent = M.ready ? 'Running the voice models on your computer.' : 'First run: downloading the voice models (about 150 MB). They’re saved for next time.';
+  show('working');
+  const st = steps(['Converting audio', 'Transcribing with Whisper (word-by-word timing)', 'Reading your vocal tone (wav2vec2 emotion model)', 'Measuring pace, pauses, fillers, pitch and endings', brainOn() ? 'Judge reviewing what you said' : 'Judge review (off: no AI judge connected)', brainOn() ? 'Judge writing questions for you' : 'Picking questions from the built-in bank']);
+  try {
+    st.go(0); const pcm = await toPCM(blob); st.done(0, fmtT(pcm.length / 16000) + ' of audio');
+    if (pcm.length < 16000 * 3) throw new Error('That recording is under 3 seconds. Try again.');
+    st.go(1); if (!M.ready) { const iv = setInterval(() => { $('st1').querySelector('span').textContent = $('mstat').textContent; }, 400); await M.loading; clearInterval(iv); }
+    const tr = await transcribe(pcm, (k, n) => { $('st1').querySelector('span').textContent = `part ${k} of ${n}`; }); st.done(1);
+    if (!tr.text || tr.text.trim().split(/\s+/).length < 5) throw new Error('I couldn’t hear enough words. Check your microphone and try again.');
+    st.go(2); const emotion = await toneOf(pcm, 8); emotion ? st.done(2) : st.skip(2, 'skipped');
+    st.go(3); const d = Delivery.analyze(pcm, tr.chunks, { emotion, paceTarget: [140, 165] }); st.done(3);
+    S.session.pitch = { text: tr.text.trim(), delivery: d, content: null };
+    if (brainOn()) {
+      st.go(4);
+      try { S.session.pitch.content = await judgePitch(S.session.pitch.text, d); st.done(4); }
+      catch (e) { st.skip(4, 'failed: ' + e.message.slice(0, 60)); S.session.judgeErr = e.message; }
+      st.go(5);
+      try { S.session.questions = await makeQuestions(S.session.pitch.text, S.set.qCount); st.done(5); }
+      catch (e) { st.skip(5, 'failed, using built-in'); S.session.judgeErr = e.message; }
+    } else { st.skip(4, 'off'); }
+    if (!S.session.questions || S.session.questions.length < 3) { S.session.questions = Questions.offlineQuestions(S.set.qCount); st.done(5, 'built-in'); }
+    const c = S.session.pitch.content;
+    S.session.pitch.score = r1(c && typeof c.content_score === 'number' ? 0.5 * d.overall + 0.5 * c.content_score : d.overall);
+    renderReport();
+  } catch (e) {
+    console.error(e); S.session = null;
+    alertBox(e.message || String(e)); show('home');
+  }
+}
+
+function alertBox(msg) {
+  $('judgeBanner').innerHTML = `<div class="banner err">${esc(msg)}</div>`;
+  setTimeout(judgeStatus, 15000);
+}
+
+function scoreTile(label, v, main) { return `<div class="score ${main ? 'main' : ''}"><div class="k">${label}</div><div class="num">${v == null ? '–' : v}<small>/10</small></div></div>`; }
+function metricCards(d) {
+  return `<div class="metrics">${d.feedback.map(f => `<div class="metric ${f.grade}"><div class="top"><h3>${esc(f.title)}</h3><span class="s">${f.score}</span></div><div class="v">${esc(f.value)}</div><p>${esc(f.note)}</p></div>`).join('')}</div>`;
+}
+function transcriptHTML(d) {
+  let out = '';
+  const t = d.transcript;
+  for (let i = 0; i < t.length; i++) {
+    const x = t[i];
+    if (x.pause) { out += `<span class="pause">${x.pause}s</span> `; continue; }
+    if (!x.tag) { out += esc(x.text) + ' '; continue; }
+    let words = [x.text];
+    while (t[i + 1] && t[i + 1].tag === x.tag) words.push(t[++i].text);
+    out += `<span class="${x.tag}">${esc(words.join(' '))}</span> `;
+  }
+  return `<div class="transcript">${out.replace(/ ([,.!?%])/g, '$1')}</div><div class="legend"><span><span class="filler" style="color:var(--fix)">um</span> filler</span><span>hedge = softening words like “I think”</span><span>[1.2s] = pause</span></div>`;
+}
+
+function renderReport() {
+  const s = S.session, d = s.pitch.delivery, c = s.pitch.content, j = JUDGES[s.judge];
+  s.stage = 'report';
+  const parts = c && c.parts ? Object.entries(c.parts).map(([k, v]) => `<div class="part"><span>${esc(k.replace('_', ' ').replace(/^./, m => m.toUpperCase()))}</span><div class="bar"><b style="width:${clamp(+v || 0, 0, 10) * 10}%;background:var(--${grade(+v || 0) === 'fix' ? 'fix' : grade(+v || 0) === 'ok' ? 'ok' : 'good'})"></b></div><span class="m">${v}</span></div>`).join('') : '';
+  $('report').innerHTML = `
+    <h1>Your pitch: ${s.pitch.score}/10</h1>
+    <p class="lede">${c && c.reaction ? `<b>${esc(j.name)}:</b> “${esc(c.reaction)}”` : `${d.speakingSeconds}s, ${d.words} words.`}</p>
+    ${s.judgeErr ? `<div class="banner err">The AI judge had a problem (${esc(s.judgeErr)}). Showing voice scores and built-in questions.</div>` : ''}
+    <div class="scores">${scoreTile('Overall', s.pitch.score, true)}${scoreTile('Delivery (how you sounded)', d.overall)}${c ? scoreTile('Content (what you said)', c.content_score) : `<div class="score"><div class="k">Content (what you said)</div><p class="note" style="margin:8px 0 0">Needs the AI judge. <button class="link" onclick="document.querySelector('.tab[data-go=settings]').click()">Turn it on</button></p></div>`}</div>
+    <h2>How you sounded</h2>
+    ${metricCards(d)}
+    ${c ? `<h2>What you said</h2>
+      <div class="two"><div class="card"><div class="parts">${parts}</div></div>
+      <div class="card"><div class="k">What worked</div><ul class="list">${(c.strengths || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="k" style="margin-top:10px">Fix next</div><ul class="list">${(c.fixes || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
+      ${c.stronger_opening ? `<div class="banner"><b>Try opening with:</b> “${esc(c.stronger_opening)}”</div>` : ''}` : ''}
+    <h2>Transcript</h2>
+    ${transcriptHTML(d)}
+    <div class="actions">
+      <button class="btn gold" id="toQA">Face ${esc(j.name)}: ${s.questions.length} questions →</button>
+      <button class="btn ghost" id="redo">Redo the pitch</button>
+    </div>`;
+  $('toQA').onclick = () => startQA();
+  $('redo').onclick = () => { S.session = null; startPitch(); };
+  show('report');
+}
+
+// ---------------- Q&A ----------------
+function qaHeader(i) {
+  const s = S.session, items = s.questions;
+  return `<div class="qhead"><span class="chip ${items[i].followUp ? 'fu' : ''}">${items[i].followUp ? 'Follow-up · ' : ''}${esc(Questions.TYPES[items[i].type].label)}</span><span class="note">Question ${items.slice(0, i + 1).filter(x => !x.followUp).length} of ${items.filter(x => !x.followUp).length}</span><div class="dots">${items.map((x, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('')}</div></div>`;
+}
+function startQA() { S.session.qi = 0; S.session.stage = 'qa'; askQuestion(); }
+
+async function askQuestion() {
+  const s = S.session, i = s.qi, item = s.questions[i], j = JUDGES[s.judge];
+  if (!item) return finish();
+  $('qa').innerHTML = `${qaHeader(i)}
+    <div class="judge"><div class="avatar talking" id="qAv" style="background:${j.color}">${j.name[0]}</div><div class="k">${esc(j.name)} · ${esc(j.title)}</div></div>
+    <p class="question">${esc(item.q)}</p>
+    <details><summary>Hint</summary><p class="tip">${esc(Questions.TYPES[item.type].tip)}</p></details>
+    <div class="actions"><button class="btn gold" id="answerBtn">Answer out loud</button><button class="btn ghost small" id="repeatBtn">Repeat question</button><button class="btn ghost small" id="skipBtn">Skip</button><button class="btn ghost small" id="endBtn">End session</button></div>`;
+  show('qa');
+  const token = s.askToken = Symbol();
+  const leave = () => { s.askToken = null; window.speechSynthesis && speechSynthesis.cancel(); };
+  $('skipBtn').onclick = () => { leave(); item.skipped = true; s.qi++; askQuestion(); };
+  $('endBtn').onclick = () => { leave(); finish(); };
+  $('repeatBtn').onclick = () => { s.askToken = null; speak(item.q); };
+  $('answerBtn').onclick = () => { leave(); answer(false); };
+  await speak(item.q);
+  const av = $('qAv'); if (av) av.classList.remove('talking');
+  if (S.set.auto && S.set.voice && S.session === s && s.askToken === token) { s.askToken = null; answer(true); }
+}
+
+async function answer(auto) {
+  const s = S.session, i = s.qi, item = s.questions[i];
+  let blob;
+  try {
+    blob = await recordScreen({ who: 'judge', line: `<b>${esc(item.q)}</b>`, target: item.type === 'lightning' ? 15 : 60, hint: auto ? 'Recording now. The clock started when the question ended.' : 'Click start and answer.', autoStart: true });
+  } catch (e) { if (e.message !== 'cancel') alertBox(e.message); askQuestion(); return; }
+  $('workTitle').textContent = 'Judging your answer…';
+  $('workLede').textContent = '';
+  show('working');
+  const st = steps(['Transcribing', 'Measuring delivery', brainOn() ? 'Judge scoring your answer' : 'Quick score (no AI judge)']);
+  try {
+    st.go(0); const pcm = await toPCM(blob); const tr = await transcribe(pcm); st.done(0);
+    const text = (tr.text || '').trim();
+    if (text.split(/\s+/).filter(Boolean).length < 3) { alertBox('I didn’t catch an answer. Try again.'); askQuestion(); return; }
+    st.go(1); const emotion = await toneOf(pcm, 3); const d = Delivery.analyze(pcm, tr.chunks, { emotion, paceTarget: [130, 170] }); st.done(1);
+    st.go(2);
+    let ev;
+    if (brainOn()) { try { ev = await judgeAnswer(item, text, d); st.done(2); } catch (e) { ev = quickContent(text); ev.err = e.message; st.skip(2, 'judge failed, quick score'); } }
+    else { ev = quickContent(text); st.done(2); }
+    const content = clamp(+ev.score || 0, 0, 10);
+    item.answer = { text, delivery: d, eval: ev, content, score: r1(0.65 * content + 0.35 * d.overall) };
+    if (ev.follow_up && typeof ev.follow_up === 'string' && ev.follow_up.length > 8 && s.questions.filter(x => x.followUp).length < 3) {
+      s.questions.splice(i + 1, 0, { type: item.type, q: ev.follow_up, followUp: true });
+    }
+    renderAnswer();
+  } catch (e) { console.error(e); alertBox(e.message); askQuestion(); }
+}
+
+function renderAnswer() {
+  const s = S.session, i = s.qi, item = s.questions[i], a = item.answer, ev = a.eval, d = a.delivery, j = JUDGES[s.judge];
+  const next = s.questions[i + 1];
+  const mini = (txt, cls) => `<span class="mini ${cls || ''}">${esc(txt)}</span>`;
+  $('qa').innerHTML = `${qaHeader(i)}
+    <p class="question" style="font-size:20px">${esc(item.q)}</p>
+    <div class="card">
+      <div class="answer-score"><div class="num">${a.score}</div><div>
+        ${ev.verdict ? `<p class="verdict">“${esc(ev.verdict)}”</p>` : ''}
+        <div class="note">Content ${r1(a.content)} · Delivery ${d.overall}${ev.direct != null ? ` · Direct ${ev.direct} · Specific ${ev.specific}${ev.convincing != null ? ` · Convincing ${ev.convincing}` : ''}` : ''}</div>
+      </div></div>
+      <div class="minis">
+        ${mini(`thinking time ${d.startDelay}s`, d.startDelay > 4 ? 'fix' : d.startDelay < 2 ? 'good' : '')}
+        ${mini(`${d.speakingSeconds}s long`, d.speakingSeconds > 75 ? 'fix' : '')}
+        ${mini(`${d.wpm} words/min`, d.scores.pace < 5.5 ? 'fix' : '')}
+        ${mini(`${d.fillers} fillers`, d.fillers > 2 ? 'fix' : d.fillers === 0 ? 'good' : '')}
+        ${mini(`${d.hedges} hedges`, d.hedges > 1 ? 'fix' : '')}
+        ${d.uptalk ? mini(`${d.uptalk} rising ending${d.uptalk > 1 ? 's' : ''}`, 'fix') : ''}
+        ${d.tone ? mini(`tone: ${d.tone.mix[0].label}`) : ''}
+      </div>
+      <p style="margin:6px 0 0"><b>Fix:</b> ${esc(ev.feedback)}</p>
+      ${ev.better_answer ? `<details><summary>A stronger answer</summary><p>${esc(ev.better_answer)}</p></details>` : ''}
+      <div class="yourans"><div class="k" style="margin-bottom:4px">What you said</div>${transcriptHTML(d).replace('class="transcript"', 'class="transcript" style="background:none;border:0;padding:0;font-size:15px"')}</div>
+      ${ev.err ? `<div class="banner err">AI judge error: ${esc(ev.err)}</div>` : ''}
+    </div>
+    <div class="actions">
+      <button class="btn gold" id="nextBtn">${next ? (next.followUp ? `${esc(j.name)} has a follow-up →` : 'Next question →') : 'See my results →'}</button>
+      <button class="btn ghost small" id="retryBtn">Try that answer again</button>
+    </div>`;
+  $('nextBtn').onclick = () => { s.qi++; askQuestion(); };
+  $('retryBtn').onclick = () => {
+    if (next && next.followUp && next === s.questions[i + 1] && !next.answer) s.questions.splice(i + 1, 1);
+    item.answer = null; askQuestion();
+  };
+  show('qa');
+}
+
+async function finish() {
+  const s = S.session; s.stage = 'final';
+  const answered = s.questions.filter(x => x.answer);
+  const qaScore = answered.length ? r1(answered.reduce((t, x) => t + x.answer.score, 0) / answered.length) : null;
+  const delAvg = answered.length ? r1(answered.reduce((t, x) => t + x.answer.delivery.overall, 0) / answered.length) : null;
+  s.qaScore = qaScore;
+  s.overall = r1(qaScore == null ? s.pitch.score : 0.4 * s.pitch.score + 0.6 * qaScore);
+  $('workTitle').textContent = 'Tallying up…'; $('workLede').textContent = ''; show('working');
+  const st = steps([brainOn() ? 'Judge deciding whether to invest' : 'Adding up your scores']);
+  st.go(0);
+  if (brainOn() && answered.length) { try { s.final = await judgeSession(s); } catch (e) { s.final = null; } }
+  st.done(0);
+  // by question type
+  const byType = {};
+  answered.forEach(x => { (byType[x.type] = byType[x.type] || []).push(x.answer.score); });
+  const typeRows = Object.entries(byType).map(([k, v]) => [Questions.TYPES[k].label, r1(v.reduce((a, b) => a + b, 0) / v.length)]).sort((a, b) => b[1] - a[1]);
+  const allFill = answered.reduce((t, x) => t + x.answer.delivery.fillers, 0) + s.pitch.delivery.fillers;
+  const think = answered.length ? r1(answered.reduce((t, x) => t + x.answer.delivery.startDelay, 0) / answered.length) : null;
+  const j = JUDGES[s.judge], f = s.final;
+  // save
+  const rec = {
+    id: s.id, date: s.date, judge: s.judge, overall: s.overall, pitch: s.pitch.score, delivery: s.pitch.delivery.overall,
+    content: s.pitch.content ? s.pitch.content.content_score : null, qa: qaScore, qaDelivery: delAvg, answered: answered.length,
+    wpm: s.pitch.delivery.wpm, fillersPerMin: s.pitch.delivery.fillersPerMin, pitchVariety: s.pitch.delivery.pitchStd, think,
+    invest: f ? f.would_invest : null, byType: Object.fromEntries(typeRows), pitchText: s.pitch.text.slice(0, 4000)
+  };
+  S.history.push(rec); store.set('history', S.history);
+  const prev = S.history.slice(0, -1);
+  const prevAvg = prev.length ? r1(prev.reduce((t, x) => t + x.overall, 0) / prev.length) : null;
+  $('final').innerHTML = `
+    <h1>${f ? (f.would_invest === 'yes' ? `${esc(j.name)} is in.` : f.would_invest === 'maybe' ? `${esc(j.name)} wants to hear more.` : `${esc(j.name)} passes. For now.`) : 'Session complete.'}</h1>
+    <p class="lede">${f ? `“${esc(f.why)}”` : ''} ${prevAvg != null ? `<br>Your score: <b>${s.overall}</b> vs. your average of ${prevAvg} (${s.overall >= prevAvg ? '+' : ''}${r1(s.overall - prevAvg)}).` : 'First session saved. Do another and you’ll see your progress.'}</p>
+    <div class="scores">${scoreTile('Session', s.overall, true)}${scoreTile('Pitch', s.pitch.score)}${scoreTile('Q&A answers', qaScore)}${scoreTile('Q&A delivery', delAvg)}</div>
+    ${f ? `<h2>Before next time</h2><div class="two"><div class="card"><div class="k">Practice these</div><ul class="list">${(f.top_fixes || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><div class="k">Best moment</div><p style="margin:6px 0 0">${esc(f.best_moment || '')}</p><div class="k" style="margin-top:12px">Headline</div><p style="margin:6px 0 0">${esc(f.headline || '')}</p></div></div>` : ''}
+    <h2>By question type</h2>
+    <div class="card"><div class="parts">${typeRows.map(([l, v]) => `<div class="part"><span>${esc(l)}</span><div class="bar"><b style="width:${v * 10}%;background:var(--${grade(v) === 'fix' ? 'fix' : grade(v) === 'ok' ? 'ok' : 'good'})"></b></div><span class="m">${v}</span></div>`).join('') || '<span class="empty">No answers recorded.</span>'}</div></div>
+    <h2>Habits</h2>
+    <div class="minis"><span class="mini">${allFill} filler words total</span>${think != null ? `<span class="mini">${think}s average thinking time</span>` : ''}<span class="mini">pitch pace ${s.pitch.delivery.wpm} words/min</span><span class="mini">${answered.length} answered, ${s.questions.filter(x => x.skipped).length} skipped</span></div>
+    <div class="actions"><button class="btn gold" id="againBtn">Pitch again</button><button class="btn ghost" id="progBtn">See my progress</button></div>`;
+  $('againBtn').onclick = () => { S.session = null; show('home'); };
+  $('progBtn').onclick = () => { S.session = null; renderProgress(); show('progress'); };
+  show('final');
+}
+
+// ---------------- progress ----------------
+function renderProgress() {
+  const h = S.history;
+  if (!h.length) { $('progress').innerHTML = `<h1>Progress</h1><p class="lede empty">No sessions yet. Finish one and your scores show up here.</p>`; return; }
+  const W = 820, H = 240, P = 34;
+  const x = i => P + (h.length === 1 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (h.length - 1));
+  const y = v => H - P + 6 - (v / 10) * (H - 2 * P);
+  const line = (key, color, dash) => { const pts = h.map((r, i) => r[key] == null ? null : `${x(i)},${y(r[key])}`).filter(Boolean); return pts.length ? `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" ${dash ? 'stroke-dasharray="5 4"' : ''}/>${h.map((r, i) => r[key] == null ? '' : `<circle cx="${x(i)}" cy="${y(r[key])}" r="3.5" fill="${color}"/>`).join('')}` : ''; };
+  const grid = [0, 2.5, 5, 7.5, 10].map(v => `<line x1="${P}" x2="${W - P}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line2)"/><text x="${P - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join('');
+  const best = Math.max(...h.map(r => r.overall));
+  const last = h[h.length - 1], first = h[0];
+  const trend = (k, better) => { const a = first[k], b = last[k]; if (a == null || b == null || h.length < 2) return ''; const dlt = r1(b - a); const good = better === 'up' ? dlt > 0 : dlt < 0; return `<span style="color:var(--${dlt === 0 ? 'ink3' : good ? 'good' : 'fix'})">${dlt > 0 ? '+' : ''}${dlt}</span>`; };
+  $('progress').innerHTML = `<h1>Progress</h1>
+    <p class="lede">${h.length} session${h.length > 1 ? 's' : ''}. Best score ${best}. Since your first session: overall ${trend('overall', 'up') || '–'}, filler words per minute ${trend('fillersPerMin', 'down') || '–'}, Q&A ${trend('qa', 'up') || '–'}.</p>
+    <div class="card"><svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${line('delivery', 'var(--gold)', true)}${line('qa', 'var(--ok)', true)}${line('overall', 'var(--navy)')}</svg>
+    <div class="keyrow"><span><i style="background:var(--navy)"></i>Session</span><span><i style="background:var(--gold)"></i>Pitch delivery</span><span><i style="background:var(--ok)"></i>Q&A answers</span></div></div>
+    <h2>Sessions</h2>
+    <div class="card" style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Judge</th><th class="m">Session</th><th class="m">Pitch</th><th class="m">Q&A</th><th class="m">Words/min</th><th class="m">Fillers/min</th><th>Invest?</th></tr></thead><tbody>
+    ${h.slice().reverse().map(r => `<tr><td>${new Date(r.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${new Date(r.date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</td><td>${esc(JUDGES[r.judge] ? JUDGES[r.judge].name : r.judge)}</td><td class="m"><b>${r.overall}</b></td><td class="m">${r.pitch}</td><td class="m">${r.qa ?? '–'}</td><td class="m">${r.wpm}</td><td class="m">${r.fillersPerMin}</td><td>${esc(r.invest || '–')}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// ---------------- settings ----------------
+function renderSettings() {
+  const opts = [['hf', 'Hugging Face', 'Free token. Open models like Llama 3.3 70B.'], ['claude', 'Claude', 'Your Anthropic API key. Sharpest questions and feedback.'], ['offline', 'Off', 'Built-in questions, voice scores only.']];
+  $('brainOpts').innerHTML = `<div class="grid judges">${opts.map(([v, t, d]) => `<label class="opt"><input type="radio" name="brain" value="${v}" ${S.set.brain === v ? 'checked' : ''}><span class="t">${t}</span><span class="d">${d}</span></label>`).join('')}</div>`;
+  const sync = () => { $('hfBox').classList.toggle('hidden', S.set.brain !== 'hf'); $('clBox').classList.toggle('hidden', S.set.brain !== 'claude'); $('testJudge').classList.toggle('hidden', S.set.brain === 'offline'); judgeStatus(); };
+  document.querySelectorAll('input[name=brain]').forEach(r => r.onchange = () => { S.set.brain = r.value; save(); sync(); });
+  const bind = (id, key) => { $(id).value = S.set[key]; $(id).oninput = e => { S.set[key] = e.target.value; save(); judgeStatus(); }; };
+  bind('hfToken', 'hfToken'); bind('hfModel', 'hfModel'); bind('clKey', 'clKey'); bind('clModel', 'clModel');
+  $('optVoice').checked = S.set.voice; $('optVoice').onchange = e => { S.set.voice = e.target.checked; save(); };
+  $('optAuto').checked = S.set.auto; $('optAuto').onchange = e => { S.set.auto = e.target.checked; save(); };
+  $('testJudge').onclick = async () => {
+    $('testOut').textContent = 'Asking…';
+    try { const r = await llmJSON('You are a terse investor.', 'Return JSON {"ok": true, "line": "a one-line greeting to a founder, under 12 words"}', 80); $('testOut').textContent = '✓ ' + (r.line || 'Connected'); }
+    catch (e) { $('testOut').textContent = '✗ ' + e.message; }
+  };
+  $('exportBtn').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S.history, null, 2)], { type: 'application/json' }));
+    a.download = 'pitch-room-history.json'; a.click(); $('dataOut').textContent = 'Downloaded.';
+  };
+  $('clearBtn').onclick = () => {
+    if ($('clearBtn').dataset.sure) { S.history = []; store.set('history', []); $('dataOut').textContent = 'History cleared.'; delete $('clearBtn').dataset.sure; $('clearBtn').textContent = 'Clear history'; }
+    else { $('clearBtn').dataset.sure = 1; $('clearBtn').textContent = 'Click again to clear everything'; }
+  };
+  sync();
+}
+
+// ---------------- wire up ----------------
+$('startBtn').onclick = () => startPitch();
+$('uploadBtn').onclick = () => $('fileIn').click();
+$('fileIn').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) startPitch(f); };
+renderHome(); renderSettings();
+window.__pitchroom = { S, M, Delivery, startPitch };
+</script>
+</body>
+</html>
